@@ -2,12 +2,14 @@ package com.poema.realm
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import io.realm.Realm
 import io.realm.RealmResults
 import io.realm.kotlin.where
 import kotlinx.android.synthetic.main.activity_main.*
 
-//fully operational crud-app with listener that updates the view.
+//fully operational realm crud-app with listener that updates the view whenever there are changes.
+
 class MainActivity : AppCompatActivity() {
 
     var dogs = mutableListOf<Dog?>()
@@ -25,40 +27,41 @@ class MainActivity : AppCompatActivity() {
 
         btn_update.setOnClickListener{
 
-            if(tv_name != null && tv_age != null){
-                val name = tv_name.text!!.toString()
+            if(tv_name.text.toString() == "" || tv_age.text.toString() == ""){
+                makeToast()
+            }
+            else{ val name = tv_name.text!!.toString()
                 val str = "${tv_age.text!!}"
                 val age = str.toInt()
-                updateInBackground(realm,name,age)
-            }
+                updateInBackground(realm,name,age)}
         }
 
         btn_create.setOnClickListener{
 
-            if(tv_name != null && tv_age != null){
+            if(tv_name.text.toString() == "" || tv_age.text.toString() == ""){
+                makeToast()
+            }
+            else{
                 val name = tv_name.text!!.toString()
                 val str = "${tv_age.text!!}"
-                val age = str.toInt()
-                createData(realm,name,age)
-            }
+                val age:Int = str.toInt()
+                createData(realm, name, age)}
         }
 
         btn_delete.setOnClickListener{
 
-            if(tv_name != null && tv_age != null){
-                val name = tv_name.text!!.toString()
+            if(tv_name.text.toString() == "" || tv_age.text.toString() == ""){
+                makeToast()
+            }
+            else{ val name = tv_name.text!!.toString()
                 val str = "${tv_age.text!!}"
                 val age = str.toInt()
-                deleteData(realm,name,age)
-            }
+                deleteData(realm,name,age)}
         }
-
         btn_read.setOnClickListener{
                 getAll(realm)
         }
-
     }
-
 
     fun getAll(realm: Realm) {
         var str = ""
@@ -74,18 +77,21 @@ class MainActivity : AppCompatActivity() {
     fun createData(realm: Realm,name: String, age: Int) {
         val temp = Dog(name, age)
         realm.beginTransaction()
-        val dog = realm.copyToRealm(temp)
+        val dog:Dog? = realm.copyToRealm(temp)
         println("!!! answer from save function: $dog")
+        if(dog==null)return
         realm.commitTransaction()
-        //getAll(realm)
     }
 
     fun deleteData(realm:Realm,name: String, age:Int){
         realm.executeTransactionAsync(Realm.Transaction { bgRealm ->
-            val dog = bgRealm.where<Dog>().equalTo("name", name).equalTo("age",age).findFirst()!!
-            dog.deleteFromRealm()
+            val dog = bgRealm.where<Dog>().equalTo("name", name).equalTo("age",age).findFirst()
+
+            if (dog != null) {
+                dog.deleteFromRealm()
+            }
         }, Realm.Transaction.OnSuccess {
-           //getAll(realm)
+
         })
     }
 
@@ -94,13 +100,12 @@ class MainActivity : AppCompatActivity() {
             val dog = bgRealm.where<Dog>().equalTo("name", name).findFirst()!!
             dog.age = age // Update its age value.
         }, Realm.Transaction.OnSuccess {
-           //getAll(realm)
         })
     }
     fun setListener(realm: Realm){
 
         (dogs as RealmResults<Dog>?)?.addChangeListener { results, changeSet ->
-            // Query results are updated in real time with fine grained notifications.
+
             println("!!! Listener results: $results")
             var str = ""
             for (dog in results){
@@ -110,8 +115,11 @@ class MainActivity : AppCompatActivity() {
 
             println("!!! Changeset: insertions: ${changeSet.insertions}, deletions ${changeSet.deletions}, changes : ${changeSet.changes}")
         }
-
+    }
+    fun makeToast(){
+        Toast.makeText(this,"You need to fill in both fields",Toast.LENGTH_LONG).show()
     }
 }
+
 
 
